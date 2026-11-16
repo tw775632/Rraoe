@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>chat</title>
+    </head>
+
+<body>
+<div id="messages"></div>
+<input id="input" type="text" placeholder="talking something"><!--消息显示区-->>
+<button id="send">Send</button><!--输入按钮-->
+<textarea id="wordsInput"></textarea><!--字卡库框-->
+<button id="saveWords"> 保存字卡</button><!--保存字卡按钮-->
+<button id="exportBtn"> 导出文件</button>  <!--导出文件按钮-->
+<input type="file" id="importFile" accept=".json"><!--导入文件输入框-->
+<button id="importBtn"> 导入文件</button><!--导入文件按钮-->
+
+
+
+    <script>
+        let words = ["你好","我在"];//词库
+        let messagesData = [];//消息数据
+
+    const input =document.getElementById("input");
+    const sendBtn =document.getElementById("send");
+    const messages =document.getElementById("messages");
+    const wordsInput =document.getElementById("wordsInput");
+    wordsInput.value =words.join("\n");
+
+//发送函数
+    sendBtn.addEventListener("click",function() {
+        const text =input.value;
+        if(text.trim() === "") return;
+
+        //保存消息数据
+        messagesData.push({ who:"user",text:text, time:new Date().toLocaleString() });
+        const div =document.createElement("div");
+        div.textContent =text;
+        messages.appendChild(div);
+
+        //随机回复
+        const reply =words[Math.floor(Math.random()*words.length)];
+        setTimeout(function() {
+            //保存回复消息数据
+            messagesData.push({ who:"peer",text:reply, time:new Date().toLocaleString() });
+
+            const peerDiv = document.createElement("div");
+            peerDiv.textContent = reply;
+            messages.appendChild(peerDiv);
+            },500);
+        input.value =""; 
+    });
+
+    //保存字卡函数
+    document.getElementById("saveWords").addEventListener("click",function() {
+        words =wordsInput.value.split("\n").filter(function(w){
+            return w.trim() !== "";
+    });
+});
+//导出文件函数
+    document.getElementById("exportBtn").addEventListener("click",function() {
+        const data = {
+            words:words,
+            messagesData:messagesData,
+        };
+        const json = JSON.stringify(data,null,2);
+        const blob = new Blob([json],{type:"application/json" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "chat-data.json";
+        //把链接临时加到页面上，再点击然后移除
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        //延迟释放url
+        setTimeout(function(){
+            URL.revokeObjectURL(url);
+        },1000);
+    });
+//导入文件函数
+document.getElementById("importBtn").addEventListener("click",function(){
+    //step1: get file
+    const file =document.getElementById("importFile").files[0];
+    if(!file) {
+        alert("请选择文件");
+        return;
+    }
+    //step2: read file
+    const reader = new FileReader();
+    reader.onload =function(event){ //text in file
+        const text = event.target.result;
+    //step3:parse json and send back
+    }
+    reader.readAsText(file);//read file as text
+
+    reader.onload =function(event){ //json in file
+        const text = event.target.result;
+        console.log(text); //print json text
+//prase text as json object
+        const data = JSON.parse(text);
+        words = data.words;//update words
+        messagesData = data.messagesData;//update messagesData
+        //clear messages div and display again as messagesData
+        messages.innerHTML ="";
+        messagesData.forEach(function(msg){
+            const div = document.createElement("div");
+            div.textContent = msg.text;
+            messages.appendChild(div);
+        });
+        wordsInput.value =words.join("\n");
+    }
+});
+
+    </script>
+</body>
+</html>
