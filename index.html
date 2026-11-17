@@ -12,21 +12,28 @@
 <textarea id="wordsInput"></textarea><!--字卡库框-->
 <button id="saveWords"> 保存字卡</button><!--保存字卡按钮-->
 <button id="exportBtn"> 导出文件</button>  <!--导出文件按钮-->
+<button id="exportWordsBtn"> 导出字卡</button><!--导出字卡按钮-->
 <input type="file" id="importFile" accept=".json"><!--导入文件输入框-->
 <button id="importBtn"> 导入文件</button><!--导入文件按钮-->
 
 
 
     <script>
-        let words = ["你好","我在"];//词库
+        let wordGroups = {
+            "问候":["你好","晚上好"],
+            "回应":["我在","是我"]
+        };
+            //词库
         let messagesData = [];//消息数据
 
     const input =document.getElementById("input");
     const sendBtn =document.getElementById("send");
     const messages =document.getElementById("messages");
     const wordsInput =document.getElementById("wordsInput");
-    wordsInput.value =words.join("\n");
-
+    wordsInput.value =Object.entries(wordGroups).map(function(pair){
+        return pair[0]+":"+pair[1].join(",");
+    }).join("\n");
+    
 //发送函数
     sendBtn.addEventListener("click",function() {
         const text =input.value;
@@ -39,7 +46,8 @@
         messages.appendChild(div);
 
         //随机回复
-        const reply =words[Math.floor(Math.random()*words.length)];
+        const allWords = Object.values(wordGroups).flat();
+        const reply =allWords[Math.floor(Math.random()*allWords.length)];
         setTimeout(function() {
             //保存回复消息数据
             messagesData.push({ who:"peer",text:reply, time:new Date().toLocaleString() });
@@ -53,14 +61,30 @@
 
     //保存字卡函数
     document.getElementById("saveWords").addEventListener("click",function() {
-        words =wordsInput.value.split("\n").filter(function(w){
+        const newGroups = {};
+        wordsInput.value.split("\n").forEach(function(line){
+         if (line.trim() === "") return;
+            const parts =line.split(":");
+            const name = parts[0].trim();
+            const words = parts[1].split(",").map(function(w){
+    return w.trim();
+});filter(function(w){
+    return w !== "";
+});
+newGroups[name] = words;
+});
+newGroups[name] = words;
+
+
+        
+        wordGroups =wordsInput.value.split("\n").filter(function(w){
             return w.trim() !== "";
     });
 });
 //导出文件函数
     document.getElementById("exportBtn").addEventListener("click",function() {
         const data = {
-            words:words,
+            wordGroups:wordGroups,
             messagesData:messagesData,
         };
         const json = JSON.stringify(data,null,2);
@@ -70,6 +94,24 @@
         const a = document.createElement("a");
         a.href = url;
         a.download = "chat-data.json";
+        //把链接临时加到页面上，再点击然后移除
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        //延迟释放url
+        setTimeout(function(){
+            URL.revokeObjectURL(url);
+        },1000);
+    });
+//导出字卡函数
+    document.getElementById("exportWordsBtn").addEventListener("click",function() {
+        const data = {wordGroups:wordGroups,};
+        const json = JSON.stringify(data,null,2);
+        const blob = new Blob([json],{type:"application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "wordGroups-data.json";
         //把链接临时加到页面上，再点击然后移除
         document.body.appendChild(a);
         a.click();
@@ -100,8 +142,8 @@ document.getElementById("importBtn").addEventListener("click",function(){
         console.log(text); //print json text
 //prase text as json object
         const data = JSON.parse(text);
-        words = data.words;//update words
-        messagesData = data.messagesData;//update messagesData
+        wordGroups = data.wordGroups || {};//update words
+        messagesData = data.messagesData || [];//update messagesData
         //clear messages div and display again as messagesData
         messages.innerHTML ="";
         messagesData.forEach(function(msg){
@@ -109,7 +151,9 @@ document.getElementById("importBtn").addEventListener("click",function(){
             div.textContent = msg.text;
             messages.appendChild(div);
         });
-        wordsInput.value =words.join("\n");
+        wordsInput.value =Object.entries(wordGroups).map(function(pair){
+            return pair[0] + ":" +pair[1].join(",");
+        }).join("\n");
     }
 });
 
