@@ -3,19 +3,64 @@
     <head>
         <meta charset="UTF-8">
         <title>chat</title>
-    </head>
+        <style>
+            body {
+                margin: 0;
+                height: 100vh;
+            }
+            #chatPage {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+            #chatArea {
+                flex: 1;
+                overflow-y: auto;
+            }
+            #inputArea {
+                flex-shrink: 0;
+                display: flex;
+            }
+            #input {
+                flex: 1;
+            }
+            #wordTools {
+                flex-shrink: 0;
+                display:flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                padding: 10px;
+            
+            #wordTools textarea {
+                flex-basis: 100%;
+                min-height:80px;
+            }
+            #wordTools button ,
+            #wordTools input {
+                flex: 0 0 auto;
+            }
+            }
+    </style>
 
 <body>
-<div id="messages"></div>
-<input id="input" type="text" placeholder="talking something"><!--消息显示区-->>
-<button id="send">Send</button><!--输入按钮-->
-<textarea id="wordsInput"></textarea><!--字卡库框-->
-<button id="saveWords"> 保存字卡</button><!--保存字卡按钮-->
-<button id="exportBtn"> 导出文件</button>  <!--导出文件按钮-->
-<button id="exportWordsBtn"> 导出字卡</button><!--导出字卡按钮-->
-<input type="file" id="importFile" accept=".json"><!--导入文件输入框-->
-<button id="importBtn"> 导入文件</button><!--导入文件按钮-->
-
+<div id = "chatPage">
+    <div id = "chatArea">
+        <div id="messages"></div>
+    </div>
+    <div id = "inputArea">
+    <input id="input" type="text" placeholder="talking something"><!--消息显示区-->>
+    <button id="send">Send</button><!--输入按钮-->
+    <button id="peerSend">peerSend</button><!--peer回复按钮-->
+</div>
+<div id = "wordTools">
+    <textarea id="wordsInput"></textarea><!--字卡库框-->
+    <button id="saveWords"> 保存字卡</button><!--保存字卡按钮-->
+    <button id="exportBtn"> 导出文件</button>  <!--导出文件按钮-->
+    <button id="exportWordsBtn"> 导出字卡</button><!--导出字卡按钮-->
+    <input type="file" id="importFile" accept=".json"><!--导入文件输入框-->
+    <button id="importBtn"> 导入文件</button><!--导入文件按钮-->
+    </div>
+</div>
 
 
     <script>
@@ -29,6 +74,7 @@
     const input =document.getElementById("input");
     const sendBtn =document.getElementById("send");
     const messages =document.getElementById("messages");
+    const chatArea =document.getElementById("chatArea");
     const wordsInput =document.getElementById("wordsInput");
     const savedGroups = localStorage.getItem("wordGroups");
         if(savedGroups !== null){
@@ -37,6 +83,8 @@
         wordsInput.value = Object.entries(wordGroups).map(function(pair){
             return pair[0]+":"+pair[1].join(",");
         }).join("\n");
+        input.focus();
+        
 
     
 
@@ -73,8 +121,33 @@
             const peerDiv = document.createElement("div");
             peerDiv.textContent = "peer: "+reply;
             messages.appendChild(peerDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
             },500);
         input.value =""; 
+        input.focus();
+        }); 
+        //peer回复
+function peerSendOne() {
+    const allWords = Object.values(wordGroups).flat();
+    const reply =allWords[Math.floor(Math.random()*allWords.length)];
+    messagesData.push({ who:"peer",text:reply, time:new Date().toLocaleString() });
+    localStorage.setItem("messagesData",JSON.stringify(messagesData));
+    const peerDiv = document.createElement("div");
+    peerDiv.textContent = "peer: "+reply;
+    messages.appendChild(peerDiv);
+    chatArea.scrollTop = chatArea.scrollHeight;
+}
+//peer回复按钮点击事件
+document.getElementById("peerSend").addEventListener("click",function() {
+    peerSendOne();
+});
+
+        //按Enter键发送消息
+input.addEventListener("keydown",function(event){
+    if(event.key === "Enter"&& !event.isComposing){
+        console.log("Enter key pressed");
+        sendBtn.click();
+    }
     });
 
     //保存字卡函数
@@ -95,6 +168,7 @@
         //保存字卡
         localStorage.setItem("wordGroups",JSON.stringify(wordGroups));
 });
+chatArea.scrollTop = chatArea.scrollHeight;
 
 
 //导出文件函数
