@@ -110,6 +110,7 @@ const tarotDeck = tarotNames.map(function(name){
         messages.innerHTML = "";
         messagesData.forEach(function(msg){
         const div =document.createElement("div");
+
         if(msg.type === "tarotCard"){
             if(msg.note){
                 div.textContent = msg.who+ ":" +msg.note;
@@ -120,22 +121,30 @@ const tarotDeck = tarotNames.map(function(name){
                 div.appendChild(cardLine);
             }else{
                 div.textContent = msg.who+ ":" +msg.cardName + " " + msg.position;
+                }
+            }else{
+                div.textContent = msg.who+ ":" +msg.text;
+                if(msg.note){
+                    const noteLine = document.createElement("div");
+                    noteLine.textContent = "   "+msg.note;
+                    noteLine.style.color = "#888";
+                    noteLine.style.fontSize = "0.85em";
+                    div.appendChild(noteLine);
+                }
             }
-            div.style.cursor = "pointer";
-            div.addEventListener("click",function(){
-                const note = prompt("注释",msg.note||"");
-                if(note === null) return;
-                msg.note = note;
-                localStorage.setItem("messagesData",JSON.stringify(messagesData));
-                renderMessages();
-            });
-        } else {
-            div.textContent = msg.who+ ":" +msg.text;
-        }
-        messages.appendChild(div);
-    });
-    chatArea.scrollTop = chatArea.scrollHeight;
-}
+                    div.style.touchAction = "manipulation";
+                    div.addEventListener("dblclick",function(){
+                        const note = prompt("注释",msg.note||"");
+                        if(note === null) return;
+                        msg.note = note;
+                        localStorage.setItem("messagesData",JSON.stringify(messagesData));
+                        renderMessages();
+                    })
+                  messages.appendChild(div);
+                });
+
+                chatArea.scrollTop = chatArea.scrollHeight;
+                }
 
     const savedGroups = localStorage.getItem("wordGroups");
         if(savedGroups !== null){
@@ -152,11 +161,8 @@ const tarotDeck = tarotNames.map(function(name){
     messagesData = JSON.parse(saved);
  }
     //把读出来的消息从重新显示到页面上
-    messagesData.forEach(function(msg){
-        const div =document.createElement("div");
-        div.textContent = msg.who+ ":" +msg.text
-        messages.appendChild(div);
-    });
+    renderMessages();
+    
 //发送函数
     sendBtn.addEventListener("click",function() {
         const text =input.value;
