@@ -30,10 +30,27 @@
     const sendBtn =document.getElementById("send");
     const messages =document.getElementById("messages");
     const wordsInput =document.getElementById("wordsInput");
-    wordsInput.value =Object.entries(wordGroups).map(function(pair){
-        return pair[0]+":"+pair[1].join(",");
-    }).join("\n");
+    const savedGroups = localStorage.getItem("wordGroups");
+        if(savedGroups !== null){
+            wordGroups = JSON.parse(savedGroups);
+        }
+        wordsInput.value = Object.entries(wordGroups).map(function(pair){
+            return pair[0]+":"+pair[1].join(",");
+        }).join("\n");
+
     
+
+    //从localStorage加载消息数据
+ const saved = localStorage.getItem("messagesData");
+ if(saved !== null){
+    messagesData = JSON.parse(saved);
+ }
+    //把读出来的消息从重新显示到页面上
+    messagesData.forEach(function(msg){
+        const div =document.createElement("div");
+        div.textContent = msg.who+ ":" +msg.text
+        messages.appendChild(div);
+    });
 //发送函数
     sendBtn.addEventListener("click",function() {
         const text =input.value;
@@ -41,8 +58,9 @@
 
         //保存消息数据
         messagesData.push({ who:"user",text:text, time:new Date().toLocaleString() });
+        localStorage.setItem("messagesData",JSON.stringify(messagesData));
         const div =document.createElement("div");
-        div.textContent =text;
+        div.textContent = "user: "+text;
         messages.appendChild(div);
 
         //随机回复
@@ -51,9 +69,9 @@
         setTimeout(function() {
             //保存回复消息数据
             messagesData.push({ who:"peer",text:reply, time:new Date().toLocaleString() });
-
+            localStorage.setItem("messagesData",JSON.stringify(messagesData));
             const peerDiv = document.createElement("div");
-            peerDiv.textContent = reply;
+            peerDiv.textContent = "peer: "+reply;
             messages.appendChild(peerDiv);
             },500);
         input.value =""; 
@@ -67,20 +85,18 @@
             const parts =line.split(":");
             const name = parts[0].trim();
             const words = parts[1].split(",").map(function(w){
-    return w.trim();
-});filter(function(w){
-    return w !== "";
+            return w.trim();
+        }).filter(function(w){
+            return w !== "";
+        });
+            newGroups[name] = words;
+    });        
+        wordGroups =newGroups;
+        //保存字卡
+        localStorage.setItem("wordGroups",JSON.stringify(wordGroups));
 });
-newGroups[name] = words;
-});
-newGroups[name] = words;
 
 
-        
-        wordGroups =wordsInput.value.split("\n").filter(function(w){
-            return w.trim() !== "";
-    });
-});
 //导出文件函数
     document.getElementById("exportBtn").addEventListener("click",function() {
         const data = {
@@ -144,11 +160,14 @@ document.getElementById("importBtn").addEventListener("click",function(){
         const data = JSON.parse(text);
         wordGroups = data.wordGroups || {};//update words
         messagesData = data.messagesData || [];//update messagesData
+        //导入后存进localStorage
+        localStorage.setItem("wordGroups",JSON.stringify(wordGroups));
+        localStorage.setItem("messagesData",JSON.stringify(messagesData));
         //clear messages div and display again as messagesData
         messages.innerHTML ="";
         messagesData.forEach(function(msg){
             const div = document.createElement("div");
-            div.textContent = msg.text;
+            div.textContent = msg.who+":" + msg.text;
             messages.appendChild(div);
         });
         wordsInput.value =Object.entries(wordGroups).map(function(pair){
